@@ -1,4 +1,4 @@
-#define MyAppName "썸네일 PDF 변환기"
+#define MyAppName "썸네일 JPG 변환기"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "ThumbnailMaker"
 #define MyAppExeName "ThumbnailMaker.exe"

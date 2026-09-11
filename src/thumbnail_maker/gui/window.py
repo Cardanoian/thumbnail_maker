@@ -15,7 +15,7 @@ from thumbnail_maker.converter.compress import convert
 from thumbnail_maker.converter.constants import APP_NAME, MAX_BYTES
 from thumbnail_maker.converter.loader import inspect
 from thumbnail_maker.converter.paths import default_output_path
-from thumbnail_maker.converter.save import save_pdf
+from thumbnail_maker.converter.save import save_jpg
 from thumbnail_maker.converter.types import ConvertError, ConvertResult, FileInfo
 from thumbnail_maker.gui.widgets import fit_size, format_bytes, parse_dropped_paths
 from thumbnail_maker.logging_setup import setup_logging
@@ -329,7 +329,7 @@ class App(BaseApp):
             if not overwrite:
                 return None
         try:
-            return save_pdf(target, result.pdf_bytes)
+            return save_jpg(target, result.jpg_bytes)
         except ConvertError as exc:
             messagebox.showerror(APP_NAME, exc.user_message)
             return None
@@ -373,18 +373,18 @@ class App(BaseApp):
     def _save_as(self) -> None:
         if self._result is None:
             return
-        initial = default_output_path(self._input_path) if self._input_path else Path("thumbnail_20kb.pdf")
+        initial = default_output_path(self._input_path) if self._input_path else Path("thumbnail_20kb.jpg")
         selected = filedialog.asksaveasfilename(
-            title="PDF 저장",
-            defaultextension=".pdf",
+            title="JPG 저장",
+            defaultextension=".jpg",
             initialfile=initial.name,
             initialdir=str(initial.parent),
-            filetypes=[("PDF", "*.pdf")],
+            filetypes=[("JPEG", "*.jpg;*.jpeg")],
         )
         if not selected:
             return
         try:
-            saved = save_pdf(Path(selected), self._result.pdf_bytes)
+            saved = save_jpg(Path(selected), self._result.jpg_bytes)
         except ConvertError as exc:
             messagebox.showerror(APP_NAME, exc.user_message)
             return

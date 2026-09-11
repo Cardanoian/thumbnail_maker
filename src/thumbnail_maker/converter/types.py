@@ -40,7 +40,7 @@ class FileInfo:
 
 @dataclass(frozen=True)
 class ConvertResult:
-    pdf_bytes: bytes
+    jpg_bytes: bytes
     preview_image: Image.Image
     page_count: int
     used_max_side: int
@@ -49,4 +49,9 @@ class ConvertResult:
 
     @property
     def size(self) -> int:
-        return len(self.pdf_bytes)
+        return len(self.jpg_bytes)
+
+    @property
+    def pdf_bytes(self) -> bytes:
+        """하위 호환용 별칭. JPG 바이트와 동일하다."""
+        return self.jpg_bytes

@@ -1,5 +1,5 @@
 MAX_BYTES = 20 * 1024  # 20480. 1비트라도 초과하면 실패.
-APP_NAME = "썸네일 PDF 변환기"
+APP_NAME = "썸네일 JPG 변환기"
 OUTPUT_SUFFIX = "_20kb"
 SUPPORTED_EXTENSIONS = {
     ".pdf",

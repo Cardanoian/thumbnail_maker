@@ -2,7 +2,6 @@ from io import BytesIO
 from pathlib import Path
 
 from PIL import Image
-import img2pdf
 
 
 def rgb_image(size=(1200, 800), color=(32, 120, 200)) -> Image.Image:
@@ -33,6 +32,7 @@ def jpeg_bytes(image: Image.Image, quality: int = 90) -> bytes:
 
 
 def write_pdf(path: Path, *images: Image.Image) -> Path:
-    payloads = [jpeg_bytes(image) for image in images]
-    path.write_bytes(img2pdf.convert(payloads))
+    rgb_images = [image.convert("RGB") for image in images]
+    first, rest = rgb_images[0], rgb_images[1:]
+    first.save(path, format="PDF", save_all=True, append_images=rest)
     return path

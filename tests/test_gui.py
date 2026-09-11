@@ -19,7 +19,8 @@ def test_gui_convert_saves_under_cap(tmp_path: Path) -> None:
         assert app._saved_path is not None
         assert app._saved_path.exists()
         assert app._saved_path.stat().st_size <= MAX_BYTES
-        assert app._saved_path.name == "샘플_20kb.pdf"
+        assert app._saved_path.name == "샘플_20kb.jpg"
+        assert app._saved_path.read_bytes().startswith(b"\xff\xd8\xff")
     finally:
         app.destroy()
 
@@ -53,7 +54,7 @@ def test_gui_reset_allows_another_file(tmp_path: Path) -> None:
         app._on_success(second, convert(second))
         app.update()
         assert app._saved_path is not None
-        assert app._saved_path.name == "두번째_20kb.pdf"
+        assert app._saved_path.name == "두번째_20kb.jpg"
         assert app._saved_path.stat().st_size <= MAX_BYTES
     finally:
         app.destroy()

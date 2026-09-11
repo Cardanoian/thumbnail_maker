@@ -15,12 +15,10 @@ hiddenimports = [
     "PIL._tkinter_finder",
     "tkinterdnd2",
     "customtkinter",
-    "img2pdf",
     "pypdfium2",
-    "pikepdf",
 ]
 
-for pkg in ("customtkinter", "tkinterdnd2", "pypdfium2", "pikepdf", "img2pdf"):
+for pkg in ("customtkinter", "tkinterdnd2", "pypdfium2"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(pkg)
     datas += pkg_datas
     binaries += pkg_binaries
@@ -29,7 +27,6 @@ for pkg in ("customtkinter", "tkinterdnd2", "pypdfium2", "pikepdf", "img2pdf"):
 datas += collect_data_files("customtkinter")
 datas += collect_data_files("tkinterdnd2")
 binaries += collect_dynamic_libs("pypdfium2")
-binaries += collect_dynamic_libs("pikepdf")
 
 if icon.exists():
     datas.append((str(icon), "assets"))

@@ -19,6 +19,7 @@ def test_inspect_pdf(tmp_path: Path) -> None:
     assert info.page_count == 2
 
 
-def test_default_output_path() -> None:
-    assert default_output_path(Path(r"C:\temp\photo.jpg")).name == "photo_20kb.pdf"
-    assert default_output_path(Path("scan.PDF")).name == "scan_20kb.pdf"
+def test_default_output_path(tmp_path: Path) -> None:
+    assert default_output_path(tmp_path / "photo.jpg").name == "photo_20kb.jpg"
+    assert default_output_path(Path("scan.PDF")).name == "scan_20kb.jpg"
+    assert default_output_path(tmp_path / "scan.PDF").suffix == ".jpg"
