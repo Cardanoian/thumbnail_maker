@@ -1,5 +1,7 @@
 MAX_BYTES = 20 * 1024  # 20480. 1비트라도 초과하면 실패.
 APP_NAME = "썸네일 JPG 변환기"
+APP_AUTHOR = "포항원동초등학교 김지원"
+FOOTER_CONTACT = f"문의: {APP_AUTHOR}"
 OUTPUT_SUFFIX = "_20kb"
 SUPPORTED_EXTENSIONS = {
     ".pdf",

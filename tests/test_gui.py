@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from thumbnail_maker.converter.compress import convert
-from thumbnail_maker.converter.constants import MAX_BYTES
+from thumbnail_maker.converter.constants import FOOTER_CONTACT, MAX_BYTES
+from thumbnail_maker.gui.fonts import FONT_FAMILY, font_dir
 from thumbnail_maker.gui.window import IDLE_FILE_NAME, IDLE_PREVIEW, IDLE_STATUS, App
 from tests.helpers import rgb_image, save_image
 
@@ -56,5 +57,66 @@ def test_gui_reset_allows_another_file(tmp_path: Path) -> None:
         assert app._saved_path is not None
         assert app._saved_path.name == "두번째_20kb.jpg"
         assert app._saved_path.stat().st_size <= MAX_BYTES
+    finally:
+        app.destroy()
+
+
+def test_pretendard_files_are_bundled() -> None:
+    directory = font_dir()
+    assert (directory / "Pretendard-Regular.ttf").is_file()
+    assert (directory / "Pretendard-Bold.ttf").is_file()
+    assert (directory / "OFL.txt").is_file()
+
+
+def test_gui_uses_pretendard() -> None:
+    app = App()
+    try:
+        app.update()
+        widgets = (
+            app.drop_label,
+            app.file_name_label,
+            app.pick_button,
+            app.convert_button,
+            app.reset_button,
+            app.status_label,
+            app.preview_label,
+            app.size_label,
+            app.saved_label,
+            app.open_button,
+            app.save_as_button,
+            app.footer,
+        )
+        for widget in widgets:
+            family = widget.cget("font").cget("family")
+            assert family == FONT_FAMILY, widget
+    finally:
+        app.destroy()
+
+
+def test_footer_shows_contact() -> None:
+    app = App()
+    try:
+        app.update()
+        assert app.footer.cget("text") == FOOTER_CONTACT
+    finally:
+        app.destroy()
+
+
+def test_footer_bug_report_opens_log_prompt(monkeypatch) -> None:
+    asked: dict[str, str] = {}
+
+    def fake_askyesno(title: str, message: str) -> bool:
+        asked["title"] = title
+        asked["message"] = message
+        return False
+
+    monkeypatch.setattr("thumbnail_maker.gui.window.messagebox.askyesno", fake_askyesno)
+    app = App()
+    try:
+        app.update()
+        app._report_bug()
+        assert asked["title"] == "문의 / 버그 신고"
+        assert "포항원동초등학교 김지원" in asked["message"]
+        assert "debug.log" in asked["message"]
     finally:
         app.destroy()

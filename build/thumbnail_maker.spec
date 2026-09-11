@@ -31,6 +31,12 @@ binaries += collect_dynamic_libs("pypdfium2")
 if icon.exists():
     datas.append((str(icon), "assets"))
 
+fonts = root / "assets" / "fonts"
+if fonts.exists():
+    for font_file in fonts.iterdir():
+        if font_file.is_file():
+            datas.append((str(font_file), "assets/fonts"))
+
 a = Analysis(
     [str(src / "thumbnail_maker" / "app.py")],
     pathex=[str(src)],

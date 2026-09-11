@@ -4,13 +4,17 @@ import sys
 from pathlib import Path
 
 
-def setup_logging() -> Path:
+def log_file_path() -> Path:
     if os.name == "nt":
         base = Path(os.environ.get("APPDATA", str(Path.home()))) / "ThumbnailMaker"
     else:
         base = Path.home() / ".thumbnail_maker"
-    base.mkdir(parents=True, exist_ok=True)
-    log_path = base / "debug.log"
+    return base / "debug.log"
+
+
+def setup_logging() -> Path:
+    log_path = log_file_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
 
     handlers: list[logging.Handler] = [
         logging.FileHandler(log_path, encoding="utf-8"),

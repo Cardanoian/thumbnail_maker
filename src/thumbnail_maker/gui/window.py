@@ -12,13 +12,14 @@ import customtkinter as ctk
 from PIL import Image
 
 from thumbnail_maker.converter.compress import convert
-from thumbnail_maker.converter.constants import APP_NAME, MAX_BYTES
+from thumbnail_maker.converter.constants import APP_AUTHOR, APP_NAME, FOOTER_CONTACT, MAX_BYTES
 from thumbnail_maker.converter.loader import inspect
 from thumbnail_maker.converter.paths import default_output_path
 from thumbnail_maker.converter.save import save_jpg
 from thumbnail_maker.converter.types import ConvertError, ConvertResult, FileInfo
+from thumbnail_maker.gui.fonts import apply_pretendard, apply_tk_named_fonts, ui_font
 from thumbnail_maker.gui.widgets import fit_size, format_bytes, parse_dropped_paths
-from thumbnail_maker.logging_setup import setup_logging
+from thumbnail_maker.logging_setup import log_file_path, setup_logging
 
 try:
     from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -56,10 +57,12 @@ BaseApp = _dnd_base()
 
 class App(BaseApp):
     def __init__(self) -> None:
+        apply_pretendard()
         super().__init__()
+        apply_tk_named_fonts()
         self.title(APP_NAME)
-        self.geometry("760x640")
-        self.minsize(680, 580)
+        self.geometry("760x670")
+        self.minsize(680, 600)
         self.configure(fg_color=("#F4F6F8", "#1A1B1E"))
 
         self._input_path: Path | None = None
@@ -79,7 +82,7 @@ class App(BaseApp):
         title = ctk.CTkLabel(
             self,
             text=APP_NAME,
-            font=ctk.CTkFont(size=26, weight="bold"),
+            font=ui_font(26, "bold"),
         )
         title.grid(row=0, column=0, padx=28, pady=(22, 8), sticky="w")
 
@@ -96,7 +99,7 @@ class App(BaseApp):
         self.drop_label = ctk.CTkLabel(
             self.drop_frame,
             text=drop_hint,
-            font=ctk.CTkFont(size=16),
+            font=ui_font(16),
             justify="center",
         )
         self.drop_label.grid(row=0, column=0, padx=20, pady=(28, 8))
@@ -104,7 +107,7 @@ class App(BaseApp):
         self.file_name_label = ctk.CTkLabel(
             self.drop_frame,
             text=IDLE_FILE_NAME,
-            font=ctk.CTkFont(size=14),
+            font=ui_font(14),
             text_color=("#5B6570", "#B0B6BE"),
         )
         self.file_name_label.grid(row=1, column=0, padx=20, pady=(0, 8))
@@ -114,7 +117,7 @@ class App(BaseApp):
             text="파일 선택",
             width=160,
             height=40,
-            font=ctk.CTkFont(size=15),
+            font=ui_font(15),
             command=self._pick_file,
         )
         self.pick_button.grid(row=2, column=0, pady=(4, 24))
@@ -127,7 +130,7 @@ class App(BaseApp):
             action_row,
             text="변환하기",
             height=52,
-            font=ctk.CTkFont(size=20, weight="bold"),
+            font=ui_font(20, "bold"),
             command=self._start_convert,
             state="disabled",
         )
@@ -138,7 +141,7 @@ class App(BaseApp):
             text="초기화",
             width=140,
             height=52,
-            font=ctk.CTkFont(size=16),
+            font=ui_font(16),
             fg_color=("#E5E7EB", "#3A3D42"),
             text_color=("#1F2933", "#F4F6F8"),
             hover_color=("#D1D5DB", "#4B5563"),
@@ -154,28 +157,33 @@ class App(BaseApp):
         self.status_label = ctk.CTkLabel(
             self,
             text=IDLE_STATUS,
-            font=ctk.CTkFont(size=14),
+            font=ui_font(14),
         )
         self.status_label.grid(row=4, column=0, padx=28, pady=(0, 8), sticky="w")
 
         result_frame = ctk.CTkFrame(self, corner_radius=16, fg_color=("#FFFFFF", "#2B2D31"))
-        result_frame.grid(row=5, column=0, padx=28, pady=(4, 12), sticky="ew")
+        result_frame.grid(row=5, column=0, padx=28, pady=(4, 6), sticky="ew")
         result_frame.grid_columnconfigure(0, weight=1)
 
-        self.preview_label = ctk.CTkLabel(result_frame, text=IDLE_PREVIEW, height=160)
+        self.preview_label = ctk.CTkLabel(
+            result_frame,
+            text=IDLE_PREVIEW,
+            height=160,
+            font=ui_font(14),
+        )
         self.preview_label.grid(row=0, column=0, padx=16, pady=(16, 8))
 
         self.size_label = ctk.CTkLabel(
             result_frame,
             text="",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            font=ui_font(16, "bold"),
         )
         self.size_label.grid(row=1, column=0, pady=(0, 4))
 
         self.saved_label = ctk.CTkLabel(
             result_frame,
             text="",
-            font=ctk.CTkFont(size=13),
+            font=ui_font(13),
             text_color=("#5B6570", "#B0B6BE"),
         )
         self.saved_label.grid(row=2, column=0, pady=(0, 8))
@@ -187,6 +195,7 @@ class App(BaseApp):
             buttons,
             text="폴더 열기",
             width=140,
+            font=ui_font(14),
             state="disabled",
             command=self._open_folder,
         )
@@ -196,10 +205,21 @@ class App(BaseApp):
             buttons,
             text="다른 이름으로 저장",
             width=180,
+            font=ui_font(14),
             state="disabled",
             command=self._save_as,
         )
         self.save_as_button.pack(side="left", padx=6)
+
+        self.footer = ctk.CTkLabel(
+            self,
+            text=FOOTER_CONTACT,
+            font=ui_font(12),
+            text_color=("#5B6570", "#B0B6BE"),
+            cursor="hand2",
+        )
+        self.footer.grid(row=6, column=0, padx=28, pady=(4, 14))
+        self.footer.bind("<Button-1>", self._on_footer_click)
 
     def _enable_drop(self) -> None:
         if not _DND_AVAILABLE:
@@ -439,11 +459,37 @@ class App(BaseApp):
     def _can_reset(self) -> bool:
         return self._input_path is not None or self._result is not None
 
+    def _on_footer_click(self, _event=None) -> None:
+        self._report_bug()
+
+    def _report_bug(self) -> None:
+        log_path = log_file_path()
+        open_log = messagebox.askyesno(
+            "문의 / 버그 신고",
+            f"문의: {APP_AUTHOR}\n\n"
+            "사용 중 문제가 있으면 알려 주세요.\n"
+            "로그 파일을 함께 보내 주시면 원인을 찾기 쉽습니다.\n\n"
+            f"로그 위치:\n{log_path}\n\n"
+            "로그 폴더를 열까요?",
+        )
+        if not open_log:
+            return
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        folder = str(log_path.parent)
+        if sys.platform == "win32":
+            if log_path.exists():
+                subprocess.run(["explorer", "/select,", str(log_path.resolve())], check=False)
+            else:
+                subprocess.run(["explorer", folder], check=False)
+        else:
+            subprocess.run(["xdg-open", folder], check=False)
+
 
 def run_app() -> None:
     setup_logging()
     logging.info("앱 시작")
     ctk.set_appearance_mode("System")
     ctk.set_default_color_theme("blue")
+    apply_pretendard()
     app = App()
     app.mainloop()

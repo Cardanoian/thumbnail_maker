@@ -21,9 +21,12 @@ def main() -> None:
         fill=(37, 99, 235, 255),
     )
     try:
-        font = ImageFont.truetype("arial.ttf", 110)
+        font = ImageFont.truetype(str(assets / "fonts" / "Pretendard-Bold.ttf"), 110)
     except OSError:
-        font = ImageFont.load_default()
+        try:
+            font = ImageFont.truetype("arial.ttf", 110)
+        except OSError:
+            font = ImageFont.load_default()
     text = "20"
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
