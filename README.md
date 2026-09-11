@@ -12,6 +12,8 @@ PDF 또는 이미지를 **20KB 이하** 단일 페이지 PDF로 바꿉니다. �
 
 ## 개발용
 
+Python **3.12**이 필요합니다. 이 프로젝트는 3.12.8에서 개발·테스트했습니다.
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt
