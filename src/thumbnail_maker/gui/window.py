@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import platform
 import subprocess
 import sys
 import threading
@@ -41,12 +43,56 @@ IDLE_FILE_NAME = "선택된 파일이 없습니다"
 IDLE_PREVIEW = "미리보기 없음"
 
 
+def _tkdnd_package_dir() -> Path | None:
+    if TkinterDnD is None:
+        return None
+    try:
+        import tkinterdnd2
+    except Exception:
+        return None
+
+    system = platform.system()
+    machine = os.environ.get("PROCESSOR_ARCHITECTURE", platform.machine()) if system == "Windows" else platform.machine()
+    folder = {
+        ("Darwin", "arm64"): "osx-arm64",
+        ("Darwin", "x86_64"): "osx-x64",
+        ("Linux", "aarch64"): "linux-arm64",
+        ("Linux", "x86_64"): "linux-x64",
+        ("Windows", "ARM64"): "win-arm64",
+        ("Windows", "AMD64"): "win-x64",
+        ("Windows", "x86"): "win-x86",
+    }.get((system, machine))
+    if folder is None:
+        return None
+    return Path(tkinterdnd2.__file__).resolve().parent / "tkdnd" / folder
+
+
+def _load_tkdnd(root) -> str | None:
+    if TkinterDnD is None:
+        return None
+    try:
+        directory = _tkdnd_package_dir()
+        if directory is None:
+            version = TkinterDnD._require(root)
+            return str(version) if version else None
+        tcl_major = int(str(root.tk.call("info", "tclversion")).split(".")[0])
+        tcl9_dir = directory.parent / f"{directory.name}-tcl9"
+        if tcl_major >= 9 and tcl9_dir.is_dir():
+            directory = tcl9_dir
+        root.tk.call("lappend", "auto_path", directory.as_posix())
+        version = root.tk.call("package", "require", "tkdnd")
+        return str(version) if version else None
+    except Exception:
+        logging.warning("tkdnd를 불러오지 못했습니다. 파일 선택 버튼만 사용합니다.", exc_info=True)
+        return None
+
+
 def _dnd_base():
     if _DND_AVAILABLE:
         class CTkDnD(ctk.CTk, TkinterDnD.DnDWrapper):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.TkdndVersion = TkinterDnD._require(self)
+                self.TkdndVersion = _load_tkdnd(self)
 
         return CTkDnD
     return ctk.CTk
@@ -59,6 +105,7 @@ class App(BaseApp):
     def __init__(self) -> None:
         apply_pretendard()
         super().__init__()
+        self._dnd_ready = bool(getattr(self, "TkdndVersion", None))
         apply_tk_named_fonts()
         self.title(APP_NAME)
         self.geometry("760x670")
@@ -93,7 +140,7 @@ class App(BaseApp):
 
         drop_hint = (
             "파일을 여기로 끌어다 놓으세요\n또는 아래 버튼으로 파일을 선택하세요\nPDF, JPG, PNG, WEBP"
-            if _DND_AVAILABLE
+            if self._dnd_ready
             else "아래 버튼으로 파일을 선택하세요\nPDF, JPG, PNG, WEBP"
         )
         self.drop_label = ctk.CTkLabel(
@@ -222,7 +269,7 @@ class App(BaseApp):
         self.footer.bind("<Button-1>", self._on_footer_click)
 
     def _enable_drop(self) -> None:
-        if not _DND_AVAILABLE:
+        if not self._dnd_ready:
             return
         for widget in (self, self.drop_frame, self.drop_label):
             widget.drop_target_register(DND_FILES)
@@ -316,8 +363,12 @@ class App(BaseApp):
     def _on_success(self, path: Path, result: ConvertResult) -> None:
         self._result = result
         self._show_preview(result.preview_image)
+        width, height = result.preview_image.size
         self.size_label.configure(
-            text=f"결과  {format_bytes(result.size)} / {format_bytes(MAX_BYTES)}"
+            text=(
+                f"결과  {format_bytes(result.size)} / {format_bytes(MAX_BYTES)}"
+                f"  ·  {width}×{height}"
+            )
         )
         self.save_as_button.configure(state="normal")
         saved = self._auto_save(path, result)

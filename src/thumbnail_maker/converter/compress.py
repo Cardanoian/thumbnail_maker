@@ -4,7 +4,8 @@ from PIL import Image
 
 from thumbnail_maker.converter.constants import (
     MAX_BYTES,
-    MAX_SIDES,
+    MAX_WIDTH,
+    MAX_WIDTHS,
     QUALITY_MAX,
     QUALITY_MIN,
 )
@@ -19,17 +20,19 @@ def convert(path, progress: ProgressCallback | None = None) -> ConvertResult:
 
     modes = (("RGB", False, image), ("L", True, image.convert("L")))
     attempts = 0
-    total = len(modes) * len(MAX_SIDES)
+    total = len(modes) * len(MAX_WIDTHS)
 
     for _mode_name, grayscale, work_image in modes:
-        for max_side in MAX_SIDES:
+        for max_width in MAX_WIDTHS:
             attempts += 1
             _report(
                 progress,
                 0.05 + 0.9 * (attempts / total),
                 "화질을 맞추는 중…",
             )
-            resized = _fit(work_image, max_side)
+            resized = _fit(work_image, max_width)
+            if resized.size[0] > MAX_WIDTH:
+                continue
             found = _best_quality_jpeg(resized)
             if found is None:
                 continue
@@ -49,12 +52,12 @@ def convert(path, progress: ProgressCallback | None = None) -> ConvertResult:
     raise TooLargeError()
 
 
-def _fit(image: Image.Image, max_side: int) -> Image.Image:
+def _fit(image: Image.Image, max_width: int) -> Image.Image:
     width, height = image.size
-    longest = max(width, height)
-    if longest <= max_side:
+    target_width = min(width, max_width, MAX_WIDTH)
+    if target_width >= width:
         return image
-    scale = max_side / longest
+    scale = target_width / width
     new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
     return image.resize(new_size, Image.Resampling.LANCZOS)
 
